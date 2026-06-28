@@ -1,0 +1,1651 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SSSD Auth Portal</title>
+
+  <script src="https://js.hcaptcha.com/1/api.js?onload=onHCaptchaLoaded&render=explicit" async defer></script>
+
+  <style>
+    :root {
+      --bg: #f7f7fb;
+      --card: #ffffff;
+      --text: #111827;
+      --muted: #6b7280;
+      --border: #d1d5db;
+      --primary: #1d4ed8;
+      --danger: #b91c1c;
+      --success: #166534;
+      --warning: #92400e;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .page {
+      max-width: 1150px;
+      margin: 0 auto;
+      padding: 28px 18px 60px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 28px;
+    }
+
+    .brand p {
+      margin: 5px 0 0;
+      color: var(--muted);
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px;
+      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+      margin-bottom: 16px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 16px;
+    }
+
+    .full {
+      grid-column: span 12;
+    }
+
+    @media (min-width: 850px) {
+      .half {
+        grid-column: span 6;
+      }
+
+      .third {
+        grid-column: span 4;
+      }
+
+      .two-thirds {
+        grid-column: span 8;
+      }
+    }
+
+    h2, h3 {
+      margin-top: 0;
+    }
+
+    label {
+      display: block;
+      margin: 12px 0 5px;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    input, select, button, textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      font-size: 14px;
+    }
+
+    textarea {
+      min-height: 90px;
+    }
+
+    button {
+      background: var(--primary);
+      color: white;
+      border: 0;
+      cursor: pointer;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+
+    button.secondary {
+      background: #4b5563;
+    }
+
+    button.light {
+      background: #eef2ff;
+      color: #1e3a8a;
+      border: 1px solid #c7d2fe;
+    }
+
+    button.danger {
+      background: var(--danger);
+    }
+
+    button.success {
+      background: var(--success);
+    }
+
+    button.warning {
+      background: var(--warning);
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .row > * {
+      flex: 1;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .message {
+      margin: 14px 0;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: white;
+      white-space: pre-wrap;
+    }
+
+    .message.error {
+      border-color: #fecaca;
+      background: #fef2f2;
+      color: var(--danger);
+    }
+
+    .message.success {
+      border-color: #bbf7d0;
+      background: #f0fdf4;
+      color: var(--success);
+    }
+
+    .message.info {
+      border-color: #bfdbfe;
+      background: #eff6ff;
+      color: #1d4ed8;
+    }
+
+    .small {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .captcha-box {
+      margin-top: 15px;
+      padding: 12px;
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+      background: #fafafa;
+    }
+
+    .checkbox-line {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 12px;
+      font-weight: bold;
+    }
+
+    .checkbox-line input {
+      width: auto;
+    }
+
+    .codes {
+      background: #111827;
+      color: #f9fafb;
+      padding: 14px;
+      border-radius: 10px;
+      white-space: pre-wrap;
+      font-family: monospace;
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 4px 9px;
+      border-radius: 999px;
+      background: #e5e7eb;
+      color: #374151;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .pill.admin {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .pill.user {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .pill.ok {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .pill.bad {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-top: 10px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th, td {
+      border-bottom: 1px solid var(--border);
+      padding: 9px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #f3f4f6;
+    }
+
+    img {
+      max-width: 240px;
+      display: block;
+      margin-top: 12px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page">
+    <div class="topbar">
+      <div class="brand">
+        <h1>SSSD Auth Portal</h1>
+        <p id="stepText">Default page: login</p>
+      </div>
+
+      <button id="topLogoutButton" class="danger hidden" onclick="logout()">Logout</button>
+    </div>
+
+    <div id="message" class="message hidden"></div>
+
+    <section id="loginSection" class="card">
+      <h2>Login</h2>
+      <p class="small">Use username/email and password. CAPTCHA appears only after repeated failed attempts.</p>
+
+      <label>Username or Email</label>
+      <input id="loginUsername" placeholder="username or email" autocomplete="username" />
+
+      <label>Password</label>
+      <input id="loginPassword" type="password" placeholder="password" autocomplete="current-password" />
+
+      <div id="loginCaptchaBox" class="captcha-box hidden">
+        <p><strong>Too many failed login attempts.</strong> Complete CAPTCHA to continue.</p>
+        <div id="loginCaptchaContainer"></div>
+      </div>
+
+      <button onclick="login()">Login</button>
+
+      <div class="row">
+        <button class="secondary" onclick="loginWithGoogle()">Sign in with Google</button>
+        <button class="secondary" onclick="loginWithGithub()">Sign in with GitHub</button>
+      </div>
+
+      <div class="row">
+        <button class="light" onclick="showRegister()">Register instead</button>
+        <button class="light" onclick="showPasswordResetRequest()">Forgot password?</button>
+      </div>
+    </section>
+
+    <section id="registerSection" class="card hidden">
+      <h2>Register</h2>
+
+      <label>Full Name</label>
+      <input id="fullName" placeholder="Test User" />
+
+      <label>Email</label>
+      <input id="email" placeholder="example@gmail.com" />
+
+      <label>Username</label>
+      <input id="username" placeholder="testuser123" />
+
+      <label>Password</label>
+      <input id="password" type="password" placeholder="StrongPass123!" />
+
+      <label>Phone Number</label>
+      <input id="phone" placeholder="+38762123456" />
+
+      <button onclick="register()">Register</button>
+      <button class="light" onclick="showLogin()">Back to login</button>
+    </section>
+
+    <section id="passwordResetRequestSection" class="card hidden">
+      <h2>Password Reset</h2>
+      <p class="small">Enter your registered email address.</p>
+
+      <label>Email</label>
+      <input id="resetEmail" placeholder="example@gmail.com" />
+
+      <div id="resetCaptchaBox" class="captcha-box hidden">
+        <p><strong>Too many password reset attempts.</strong> Complete CAPTCHA to continue.</p>
+        <div id="resetCaptchaContainer"></div>
+      </div>
+
+      <button onclick="requestPasswordReset()">Send reset link</button>
+      <button class="light" onclick="showLogin()">Back to login</button>
+    </section>
+
+    <section id="passwordResetConfirmSection" class="card hidden">
+      <h2>Set New Password</h2>
+
+      <label>Reset Token</label>
+      <input id="resetTokenInput" readonly />
+
+      <label>New Password</label>
+      <input id="newResetPassword" type="password" placeholder="NewStrongPass123!" />
+
+      <button onclick="confirmPasswordReset()">Reset password</button>
+      <button class="light" onclick="showLogin()">Back to login</button>
+    </section>
+
+    <section id="setupSection" class="card hidden">
+      <h2>2FA Setup</h2>
+      <p>Password/SSO is valid, but 2FA must be enabled before access.</p>
+
+      <label>User ID</label>
+      <input id="setupUserId" readonly />
+
+      <label>2FA Method</label>
+      <select id="setupMethod">
+        <option value="email">Email code</option>
+        <option value="sms">SMS code</option>
+        <option value="totp">TOTP Authenticator app</option>
+      </select>
+
+      <button onclick="startSetup()">Start 2FA Setup</button>
+
+      <div id="qrArea"></div>
+
+      <label>Verification Code</label>
+      <input id="setupCode" placeholder="email/SMS/TOTP code" />
+
+      <button onclick="verifySetup()">Verify and Enable 2FA</button>
+    </section>
+
+    <section id="recoveryCodesSection" class="card hidden">
+      <h2>Save Recovery Codes</h2>
+      <p>These recovery codes are shown only once. Save them before continuing.</p>
+
+      <div id="recoveryCodesBox" class="codes"></div>
+
+      <button onclick="downloadRecoveryCodes()">Download recovery codes</button>
+      <button class="success" onclick="continueAfterSavingCodes()">I saved them, continue</button>
+    </section>
+
+    <section id="twoFaLoginSection" class="card hidden">
+      <h2>2FA Login Verification</h2>
+      <p>Password/SSO is correct. Now verify the second factor.</p>
+
+      <label>User ID</label>
+      <input id="loginUserId" readonly />
+
+      <button id="sendCodeButton" type="button" onclick="sendLoginCode(event)">Send Email/SMS Login Code</button>
+
+      <label>2FA Code</label>
+      <input id="loginCode" placeholder="email/SMS/TOTP code" />
+
+      <label class="checkbox-line">
+        <input id="trustDeviceLogin" type="checkbox" />
+        Trust this device for 10 days
+      </label>
+
+      <button onclick="verifyLogin2fa()">Verify 2FA and Login</button>
+
+      <h3>Or use recovery code</h3>
+
+      <label>Recovery Code</label>
+      <input id="recoveryCode" placeholder="ABC123-DEF456" />
+
+      <label class="checkbox-line">
+        <input id="trustDeviceRecovery" type="checkbox" />
+        Trust this device for 10 days
+      </label>
+
+      <button onclick="verifyRecovery()">Login With Recovery Code</button>
+    </section>
+
+    <section id="dashboardSection" class="hidden">
+      <div class="card">
+        <h2 id="greetingTitle">Welcome</h2>
+        <p id="userInfoText" class="small"></p>
+      </div>
+
+      <div class="grid">
+        <div class="card half">
+          <h3>Security Settings</h3>
+          <p class="small">Manage 2FA, password, sessions, and trusted devices.</p>
+
+          <label>Current 2FA setup method</label>
+          <select id="dashboardSetupMethod">
+            <option value="email">Email code</option>
+            <option value="sms">SMS code</option>
+            <option value="totp">TOTP Authenticator app</option>
+          </select>
+
+          <button onclick="startDashboard2faSetup()">Enable / Change 2FA Method</button>
+          <div id="dashboardQrArea"></div>
+
+          <label>2FA Setup Verification Code</label>
+          <input id="dashboardSetupCode" placeholder="email/SMS/TOTP code" />
+
+          <button onclick="verifyDashboard2faSetup()">Verify 2FA Setup</button>
+        </div>
+
+        <div class="card half">
+          <h3>Change Password</h3>
+
+          <label>Current Password</label>
+          <input id="currentPassword" type="password" />
+
+          <label>New Password</label>
+          <input id="newPassword" type="password" />
+
+          <button onclick="changePassword()">Change password</button>
+        </div>
+
+        <div class="card half">
+          <h3>Active Sessions</h3>
+          <button onclick="loadSessions()">Refresh sessions</button>
+          <div id="sessionsTable" class="table-wrap"></div>
+        </div>
+
+        <div class="card half">
+          <h3>Trusted Devices</h3>
+          <button onclick="loadTrustedDevices()">Refresh trusted devices</button>
+          <div id="trustedDevicesTable" class="table-wrap"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="adminSection" class="hidden">
+      <div class="card">
+        <h2>Admin Dashboard</h2>
+        <p class="small">Users, audit logs, and reserved usernames management.</p>
+      </div>
+
+      <div class="grid">
+        <div class="card full">
+          <h3>Users Preview</h3>
+          <button onclick="loadAdminUsers()">Load users</button>
+          <div id="adminUsersTable" class="table-wrap"></div>
+        </div>
+
+        <div class="card full">
+          <h3>Audit Logs</h3>
+
+          <div class="row">
+            <div>
+              <label>Action</label>
+              <input id="auditAction" placeholder="LOGIN_FAILED" />
+            </div>
+
+            <div>
+              <label>Actor ID</label>
+              <input id="auditActorId" placeholder="5" />
+            </div>
+
+            <div>
+              <label>IP Address</label>
+              <input id="auditIp" placeholder="::1" />
+            </div>
+
+            <div>
+              <label>Page</label>
+              <input id="auditPage" value="1" />
+            </div>
+          </div>
+
+          <button onclick="loadAuditLogs()">Load audit logs</button>
+          <div id="auditLogsTable" class="table-wrap"></div>
+        </div>
+
+        <div class="card full">
+          <h3>Reserved Usernames CRUD</h3>
+
+          <div class="row">
+            <input id="reservedUsernameInput" placeholder="reserved username" />
+            <button onclick="createReservedUsername()">Create</button>
+          </div>
+
+          <button onclick="loadReservedUsernames()">Load reserved usernames</button>
+          <div id="reservedUsernamesTable" class="table-wrap"></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const api = "/api";
+
+    let currentUserId = null;
+    let currentTwoFactorMethod = null;
+    let currentRecoveryCodes = [];
+    let currentUser = null;
+    let currentSsoProvider = null;
+
+    let loginCaptchaWidgetId = null;
+    let resetCaptchaWidgetId = null;
+    let hcaptchaSiteKey = null;
+
+    let loginCaptchaRequired = false;
+    let resetCaptchaRequired = false;
+
+    const el = (id) => document.getElementById(id);
+
+    const sections = [
+      "loginSection",
+      "registerSection",
+      "passwordResetRequestSection",
+      "passwordResetConfirmSection",
+      "setupSection",
+      "recoveryCodesSection",
+      "twoFaLoginSection",
+      "dashboardSection",
+      "adminSection"
+    ];
+
+    async function onHCaptchaLoaded() {
+      try {
+        const response = await fetch(api + "/public-config");
+        const data = await response.json();
+
+        hcaptchaSiteKey = data.hCaptchaSiteKey;
+
+        if (!hcaptchaSiteKey) {
+          showMessage("HCAPTCHA_SITE_KEY is missing in .env file.", "error");
+          return;
+        }
+
+        if (window.hcaptcha) {
+          loginCaptchaWidgetId = hcaptcha.render("loginCaptchaContainer", {
+            sitekey: hcaptchaSiteKey
+          });
+
+          resetCaptchaWidgetId = hcaptcha.render("resetCaptchaContainer", {
+            sitekey: hcaptchaSiteKey
+          });
+        }
+      } catch (error) {
+        console.error("hCaptcha config error:", error);
+        showMessage("Could not load hCaptcha site key from backend.", "error");
+      }
+    }
+
+    function hideAll() {
+      sections.forEach((id) => el(id).classList.add("hidden"));
+      el("topLogoutButton").classList.add("hidden");
+    }
+
+    function clearMessage() {
+      el("message").className = "message hidden";
+      el("message").textContent = "";
+    }
+
+    function showMessage(text, type = "info") {
+      el("message").className = "message " + type;
+      el("message").textContent = text;
+      el("message").classList.remove("hidden");
+    }
+
+    function showLogin() {
+      hideAll();
+      clearMessage();
+      currentSsoProvider = null;
+      el("loginSection").classList.remove("hidden");
+      el("stepText").textContent = "Default page: login";
+    }
+
+    function showRegister() {
+      hideAll();
+      clearMessage();
+      el("registerSection").classList.remove("hidden");
+      el("stepText").textContent = "Register a new account";
+    }
+
+    function showPasswordResetRequest() {
+      hideAll();
+      clearMessage();
+      el("passwordResetRequestSection").classList.remove("hidden");
+      el("stepText").textContent = "Password reset request";
+    }
+
+    function showPasswordResetConfirm(token) {
+      hideAll();
+      clearMessage();
+      el("passwordResetConfirmSection").classList.remove("hidden");
+      el("resetTokenInput").value = token || "";
+      el("stepText").textContent = "Set a new password";
+    }
+
+    function showSetup(userId) {
+      hideAll();
+      clearMessage();
+      currentUserId = userId;
+      el("setupUserId").value = userId;
+      el("setupSection").classList.remove("hidden");
+      el("stepText").textContent = "2FA setup is required";
+    }
+
+    function showRecoveryCodes(codes) {
+      hideAll();
+      clearMessage();
+      currentRecoveryCodes = codes || [];
+      el("recoveryCodesBox").textContent = currentRecoveryCodes.join("\n");
+      el("recoveryCodesSection").classList.remove("hidden");
+      el("stepText").textContent = "Save recovery codes";
+    }
+
+    function showTwoFaLogin(userId, method) {
+      hideAll();
+      clearMessage();
+
+      currentUserId = Number(userId);
+      currentTwoFactorMethod = method;
+
+      el("loginUserId").value = String(currentUserId || "");
+
+      if (method === "totp") {
+        el("sendCodeButton").classList.add("hidden");
+      } else {
+        el("sendCodeButton").classList.remove("hidden");
+      }
+
+      el("twoFaLoginSection").classList.remove("hidden");
+      el("stepText").textContent = "2FA verification required";
+    }
+
+    function showDashboard() {
+      hideAll();
+      clearMessage();
+
+      el("dashboardSection").classList.remove("hidden");
+      el("topLogoutButton").classList.remove("hidden");
+
+      const name = currentUser?.username || currentUser?.email || "user";
+      const role = currentUser?.role || "user";
+
+      el("greetingTitle").textContent = `Welcome, ${name}`;
+      el("userInfoText").innerHTML =
+        `Role: <span class="pill ${role === "admin" ? "admin" : "user"}">${role}</span> | Email: ${escapeHtml(currentUser?.email || "-")}`;
+
+      if (role === "admin") {
+        el("adminSection").classList.remove("hidden");
+      }
+
+      el("stepText").textContent = "Secure user area";
+      loadSessions();
+      loadTrustedDevices();
+
+      if (role === "admin") {
+        loadAdminUsers();
+        loadAuditLogs();
+        loadReservedUsernames();
+      }
+    }
+
+    function showLoginCaptcha() {
+      el("loginCaptchaBox").classList.remove("hidden");
+      loginCaptchaRequired = true;
+    }
+
+    function hideLoginCaptcha() {
+      el("loginCaptchaBox").classList.add("hidden");
+      loginCaptchaRequired = false;
+    }
+
+    function showResetCaptcha() {
+      el("resetCaptchaBox").classList.remove("hidden");
+      resetCaptchaRequired = true;
+    }
+
+    function hideResetCaptcha() {
+      el("resetCaptchaBox").classList.add("hidden");
+      resetCaptchaRequired = false;
+    }
+
+    function resetCaptchas() {
+      if (window.hcaptcha && loginCaptchaWidgetId !== null) {
+        hcaptcha.reset(loginCaptchaWidgetId);
+      }
+
+      if (window.hcaptcha && resetCaptchaWidgetId !== null) {
+        hcaptcha.reset(resetCaptchaWidgetId);
+      }
+    }
+
+    async function request(path, method = "GET", body = null) {
+      const options = {
+        method,
+        credentials: "include",
+        headers: {}
+      };
+
+      if (body !== null) {
+        options.headers["Content-Type"] = "application/json";
+        options.body = JSON.stringify(body);
+      }
+
+      const response = await fetch(api + path, options);
+      const text = await response.text();
+
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = { message: text };
+      }
+
+      return {
+        ok: response.ok,
+        status: response.status,
+        data
+      };
+    }
+
+    const get = (path) => request(path, "GET");
+    const post = (path, body) => request(path, "POST", body);
+    const patch = (path, body) => request(path, "PATCH", body);
+    const put = (path, body) => request(path, "PUT", body);
+    const del = (path) => request(path, "DELETE");
+
+    async function register() {
+      clearMessage();
+
+      const result = await post("/register", {
+        fullName: el("fullName").value.trim(),
+        email: el("email").value.trim(),
+        username: el("username").value.trim(),
+        password: el("password").value,
+        phone: el("phone").value.trim()
+      });
+
+      if (!result.ok) {
+        return showMessage(result.data.message || result.data.error || "Registration failed.", "error");
+      }
+
+      el("loginUsername").value = el("username").value.trim();
+      el("loginPassword").value = el("password").value;
+
+      showLogin();
+      showMessage("Registration successful. Verify your email first, then log in.", "success");
+    }
+
+    async function login() {
+      clearMessage();
+
+      const usernameOrEmail = el("loginUsername").value.trim();
+      const password = el("loginPassword").value;
+
+      if (!usernameOrEmail || !password) {
+        return showMessage("Enter username/email and password.", "error");
+      }
+
+      let captchaToken = null;
+
+      if (loginCaptchaRequired) {
+        if (!window.hcaptcha || loginCaptchaWidgetId === null) {
+          return showMessage("CAPTCHA is still loading. Please wait.", "error");
+        }
+
+        captchaToken = hcaptcha.getResponse(loginCaptchaWidgetId);
+
+        if (!captchaToken) {
+          return showMessage("Please complete the CAPTCHA before logging in.", "error");
+        }
+      }
+
+      const result = await post("/login", {
+        usernameOrEmail,
+        password,
+        captchaToken
+      });
+
+      if (!result.ok) {
+        const msg = result.data.message || result.data.error || "Login failed.";
+        resetCaptchas();
+
+        if (result.data.captchaRequired || msg.toLowerCase().includes("captcha")) {
+          showLoginCaptcha();
+        }
+
+        return showMessage(msg, "error");
+      }
+
+      resetCaptchas();
+      hideLoginCaptcha();
+
+      if (result.data.requiresTwoFactorSetup) {
+        showSetup(result.data.userId);
+        return;
+      }
+
+      if (result.data.requiresTwoFactor) {
+        showTwoFaLogin(result.data.userId, result.data.twoFactorMethod);
+
+        if (!result.data.codeSent && result.data.twoFactorMethod !== "totp") {
+          await sendLoginCode();
+        }
+
+        return;
+      }
+
+      await loadMyProfile(false);
+      showDashboard();
+    }
+
+    async function loginWithGoogle() {
+      clearMessage();
+
+      const response = await fetch(api + "/google-login", {
+        credentials: "include"
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.authUrl) {
+        return showMessage(data.message || "Google login could not be started.", "error");
+      }
+
+      window.location.href = data.authUrl;
+    }
+
+    async function loginWithGithub() {
+      clearMessage();
+
+      const response = await fetch(api + "/github-login", {
+        credentials: "include"
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.authUrl) {
+        return showMessage(data.message || "GitHub login could not be started.", "error");
+      }
+
+      window.location.href = data.authUrl;
+    }
+
+    function handleSsoResultFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+
+      const provider = params.get("provider");
+      const status = params.get("status");
+      const reason = params.get("reason");
+      const userId = params.get("userId");
+      const twoFactorMethod = params.get("twoFactorMethod");
+
+      if (!provider) {
+        return false;
+      }
+
+      window.history.replaceState({}, document.title, "/front");
+
+      if (status === "requires_2fa") {
+        currentSsoProvider = provider;
+        showTwoFaLogin(Number(userId), twoFactorMethod);
+        showMessage(`${provider} SSO successful. Complete 2FA to continue.`, "success");
+        return true;
+      }
+
+      if (status === "requires_2fa_setup") {
+        currentSsoProvider = provider;
+        showSetup(Number(userId));
+        showMessage(`${provider} SSO successful. You must set up 2FA first.`, "success");
+        return true;
+      }
+
+      showLogin();
+      showMessage(`${provider} SSO failed. Reason: ${reason || "unknown"}`, "error");
+      return true;
+    }
+
+    async function startSetup() {
+      clearMessage();
+
+      const method = el("setupMethod").value;
+
+      if (!currentUserId) {
+        return showMessage("User ID is missing. Log in first.", "error");
+      }
+
+      if (method === "totp") {
+        const result = await post("/auth/2fa/setup", {
+          userId: Number(currentUserId)
+        });
+
+        if (!result.ok) {
+          return showMessage(result.data.message || "TOTP setup failed.", "error");
+        }
+
+        if (result.data.qrCode) {
+          el("qrArea").innerHTML = `<img src="${result.data.qrCode}" alt="TOTP QR Code">`;
+        }
+
+        return showMessage("Scan QR code with authenticator app, then enter generated code.", "success");
+      }
+
+      const result = await post("/auth/2fa/setup/send-code", {
+        userId: Number(currentUserId),
+        method
+      });
+
+      if (!result.ok) {
+        return showMessage(result.data.message || "Could not send setup code.", "error");
+      }
+
+      showMessage(result.data.message || "2FA setup code sent.", "success");
+    }
+
+    async function verifySetup() {
+      clearMessage();
+
+      const method = el("setupMethod").value;
+      const code = el("setupCode").value.trim();
+
+      if (!code) {
+        return showMessage("Enter verification code first.", "error");
+      }
+
+      const result = await post("/auth/2fa/setup/verify", {
+        userId: Number(currentUserId),
+        method,
+        code
+      });
+
+      if (!result.ok) {
+        return showMessage(result.data.message || "2FA setup verification failed.", "error");
+      }
+
+      if (result.data.recoveryCodes && result.data.recoveryCodes.length > 0) {
+        showRecoveryCodes(result.data.recoveryCodes);
+        return;
+      }
+
+      showMessage("2FA enabled.", "success");
+      loadMyProfile(false).then(showDashboard);
+    }
+
+    async function startDashboard2faSetup() {
+      clearMessage();
+
+      if (!currentUser?.sub && !currentUser?.id) {
+        return showMessage("User is missing.", "error");
+      }
+
+      currentUserId = currentUser.sub || currentUser.id;
+      const method = el("dashboardSetupMethod").value;
+
+      if (method === "totp") {
+        const result = await post("/auth/2fa/setup", {
+          userId: Number(currentUserId)
+        });
+
+        if (!result.ok) {
+          return showMessage(result.data.message || "TOTP setup failed.", "error");
+        }
+
+        if (result.data.qrCode) {
+          el("dashboardQrArea").innerHTML = `<img src="${result.data.qrCode}" alt="TOTP QR Code">`;
+        }
+
+        return showMessage("Scan QR code, then enter generated code.", "success");
+      }
+
+      const result = await post("/auth/2fa/setup/send-code", {
+        userId: Number(currentUserId),
+        method
+      });
+
+      if (!result.ok) {
+        return showMessage(result.data.message || "Could not send setup code.", "error");
+      }
+
+      showMessage(result.data.message || "2FA setup code sent.", "success");
+    }
+
+    async function verifyDashboard2faSetup() {
+      clearMessage();
+
+      const method = el("dashboardSetupMethod").value;
+      const code = el("dashboardSetupCode").value.trim();
+
+      if (!code) {
+        return showMessage("Enter verification code.", "error");
+      }
+
+      const result = await post("/auth/2fa/setup/verify", {
+        userId: Number(currentUserId || currentUser.sub || currentUser.id),
+        method,
+        code
+      });
+
+      if (!result.ok) {
+        return showMessage(result.data.message || "2FA setup failed.", "error");
+      }
+
+      if (result.data.recoveryCodes && result.data.recoveryCodes.length > 0) {
+        showRecoveryCodes(result.data.recoveryCodes);
+        return;
+      }
+
+      showMessage("2FA setup updated.", "success");
+    }
+
+    function downloadRecoveryCodes() {
+      if (!currentRecoveryCodes.length) {
+        return showMessage("No recovery codes available.", "error");
+      }
+
+      const content =
+        "SSSD Recovery Codes\n" +
+        "===================\n\n" +
+        currentRecoveryCodes.join("\n") +
+        "\n";
+
+      const blob = new Blob([content], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "sssd-recovery-codes.txt";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      URL.revokeObjectURL(url);
+    }
+
+    function continueAfterSavingCodes() {
+      loadMyProfile(false).then(showDashboard);
+    }
+
+    async function sendLoginCode(event) {
+      if (event && typeof event.preventDefault === "function") {
+        event.preventDefault();
+      }
+
+      clearMessage();
+
+      const userId = Number(el("loginUserId").value || currentUserId);
+
+      if (!userId) {
+        return showMessage("User ID is missing. Please log in again.", "error");
+      }
+
+      currentUserId = userId;
+
+      console.log("FRONTEND: sendLoginCode clicked/called");
+      console.log("FRONTEND: posting to /api/auth/2fa/login/send-code for userId:", userId);
+
+      const result = await post("/auth/2fa/login/send-code", {
+        userId
+      });
+
+      console.log("FRONTEND: sendLoginCode response:", result);
+
+      if (!result.ok) {
+        return showMessage(result.data.message || "Could not send login code.", "error");
+      }
+
+      showMessage(result.data.message || "2FA login code sent.", "success");
+    }
+
+    async function verifyLogin2fa() {
+      clearMessage();
+
+      const code = el("loginCode").value.trim();
+
+      if (!code) {
+        return showMessage("Enter 2FA code first.", "error");
+      }
+
+      const result = await post("/auth/2fa/login/verify", {
+        userId: Number(currentUserId),
+        code,
+        trustDevice: el("trustDeviceLogin").checked,
+        ssoProvider: currentSsoProvider
+      });
+
+      if (!result.ok) {
+        return showMessage(result.data.message || "2FA verification failed.", "error");
+      }
+
+      await loadMyProfile(false);
+      showDashboard();
+      showMessage("Login successful. 2FA verified.", "success");
+    }
+
+    async function verifyRecovery() {
+      clearMessage();
+
+      const code = el("recoveryCode").value.trim();
+
+      if (!code) {
+        return showMessage("Enter recovery code first.", "error");
+      }
+
+      const result = await post("/auth/2fa/recovery/verify", {
+        userId: Number(currentUserId),
+        code,
+        trustDevice: el("trustDeviceRecovery").checked
+      });
+
+      if (!result.ok) {
+        return showMessage(result.data.message || "Recovery code failed.", "error");
+      }
+
+      await loadMyProfile(false);
+      showDashboard();
+      showMessage("Login successful with recovery code.", "success");
+    }
+
+    async function requestPasswordReset() {
+      clearMessage();
+
+      const email = el("resetEmail").value.trim();
+      let captchaToken = null;
+
+      if (!email) {
+        return showMessage("Enter your registered email address.", "error");
+      }
+
+      if (resetCaptchaRequired) {
+        if (!window.hcaptcha || resetCaptchaWidgetId === null) {
+          return showMessage("CAPTCHA is still loading. Please wait.", "error");
+        }
+
+        captchaToken = hcaptcha.getResponse(resetCaptchaWidgetId);
+
+        if (!captchaToken) {
+          return showMessage("Please complete the CAPTCHA.", "error");
+        }
+      }
+
+      const result = await post("/password-reset/request", {
+        email,
+        captchaToken
+      });
+
+      if (!result.ok) {
+        const msg = result.data.message || "Password reset request failed.";
+
+        resetCaptchas();
+
+        if (result.data.captchaRequired || msg.toLowerCase().includes("captcha")) {
+          showResetCaptcha();
+        }
+
+        return showMessage(msg, "error");
+      }
+
+      resetCaptchas();
+      hideResetCaptcha();
+      showMessage(result.data.message || "Password reset link sent.", "success");
+    }
+
+    async function confirmPasswordReset() {
+      clearMessage();
+
+      const token = el("resetTokenInput").value.trim();
+      const newPassword = el("newResetPassword").value;
+
+      if (!token || !newPassword) {
+        return showMessage("Token and new password are required.", "error");
+      }
+
+      const result = await post("/password-reset/confirm", {
+        token,
+        newPassword
+      });
+
+      if (!result.ok) {
+        return showMessage(result.data.message || "Password reset failed.", "error");
+      }
+
+      showLogin();
+      showMessage(result.data.message || "Password reset successful. Log in again.", "success");
+    }
+
+    async function loadMyProfile(silent = false) {
+      const result = await get("/me");
+
+      if (!result.ok) {
+        currentUser = null;
+        if (!silent) showMessage("Not authenticated.", "error");
+        return false;
+      }
+
+      currentUser = result.data.user;
+      return true;
+    }
+
+    async function changePassword() {
+      clearMessage();
+
+      const currentPassword = el("currentPassword").value;
+      const newPassword = el("newPassword").value;
+
+      if (!currentPassword || !newPassword) {
+        return showMessage("Current and new password are required.", "error");
+      }
+
+      const result = await post("/security/change-password", {
+        currentPassword,
+        newPassword
+      });
+
+      if (!result.ok) {
+        return showMessage(result.data.message || "Password change failed.", "error");
+      }
+
+      el("currentPassword").value = "";
+      el("newPassword").value = "";
+      showMessage(result.data.message || "Password changed successfully.", "success");
+    }
+
+    async function loadSessions() {
+      const result = await get("/security/sessions");
+
+      if (!result.ok) {
+        el("sessionsTable").innerHTML = "<p class='small'>Could not load sessions.</p>";
+        return;
+      }
+
+      const rows = result.data.sessions || [];
+
+      el("sessionsTable").innerHTML = table(
+        ["ID", "Trusted Device", "IP", "User Agent", "Expires", "Action"],
+        rows.map((s) => [
+          s.id,
+          s.trusted_device_id || "-",
+          escapeHtml(s.ip_address || "-"),
+          short(s.user_agent),
+          formatDate(s.expires_at),
+          `<button class="danger" onclick="revokeSession(${s.id})">Revoke</button>`
+        ])
+      );
+    }
+
+    async function revokeSession(id) {
+      const result = await del(`/security/sessions/${id}`);
+
+      if (!result.ok) {
+        return showMessage(result.data.message || "Could not revoke session.", "error");
+      }
+
+      showMessage("Session revoked.", "success");
+      loadSessions();
+    }
+
+    async function loadTrustedDevices() {
+      const result = await get("/security/trusted-devices");
+
+      if (!result.ok) {
+        el("trustedDevicesTable").innerHTML = "<p class='small'>Could not load trusted devices.</p>";
+        return;
+      }
+
+      const rows = result.data.devices || [];
+
+      el("trustedDevicesTable").innerHTML = table(
+        ["ID", "IP", "User Agent", "Expires", "Revoked", "Action"],
+        rows.map((d) => [
+          d.id,
+          escapeHtml(d.ip_address || "-"),
+          short(d.user_agent),
+          formatDate(d.expires_at),
+          d.revoked_at ? `<span class="pill bad">yes</span>` : `<span class="pill ok">no</span>`,
+          d.revoked_at ? "-" : `<button class="danger" onclick="revokeTrustedDevice(${d.id})">Revoke</button>`
+        ])
+      );
+    }
+
+    async function revokeTrustedDevice(id) {
+      const result = await del(`/security/trusted-devices/${id}`);
+
+      if (!result.ok) {
+        return showMessage(result.data.message || "Could not revoke trusted device.", "error");
+      }
+
+      showMessage("Trusted device revoked.", "success");
+      loadTrustedDevices();
+      loadSessions();
+    }
+
+    async function logout() {
+      clearMessage();
+
+      const result = await post("/logout", {});
+
+      currentUser = null;
+      showLogin();
+
+      if (!result.ok) {
+        return showMessage(result.data.message || "Logout failed.", "error");
+      }
+
+      showMessage(result.data.message || "Logged out successfully.", "success");
+    }
+
+    async function refreshSession() {
+      clearMessage();
+
+      const result = await post("/refresh", {});
+
+      if (!result.ok) {
+        return showMessage(result.data.message || "Refresh failed.", "error");
+      }
+
+      showMessage("Session refreshed successfully.", "success");
+    }
+
+    async function loadAdminUsers() {
+      const result = await get("/admin/users?page=1&limit=50");
+
+      if (!result.ok) {
+        return showMessage(result.data.message || "Could not load users.", "error");
+      }
+
+      const rows = result.data.users || [];
+
+      el("adminUsersTable").innerHTML = table(
+        ["ID", "Name", "Email", "Username", "Role", "Blocked", "Action"],
+        rows.map((u) => [
+          u.id,
+          escapeHtml(u.full_name || ""),
+          escapeHtml(u.email || ""),
+          escapeHtml(u.username || ""),
+          u.role || "user",
+          u.is_blocked ? `<span class="pill bad">blocked</span>` : `<span class="pill ok">active</span>`,
+          u.is_blocked
+            ? `<button onclick="unblockUser(${u.id})">Unblock</button>`
+            : `<button class="danger" onclick="blockUser(${u.id})">Block</button>`
+        ])
+      );
+    }
+
+    async function blockUser(id) {
+      const result = await patch(`/admin/users/${id}/block`, {});
+
+      if (!result.ok) {
+        return showMessage(result.data.message || "Could not block user.", "error");
+      }
+
+      showMessage("User blocked.", "success");
+      loadAdminUsers();
+    }
+
+    async function unblockUser(id) {
+      const result = await patch(`/admin/users/${id}/unblock`, {});
+
+      if (!result.ok) {
+        return showMessage(result.data.message || "Could not unblock user.", "error");
+      }
+
+      showMessage("User unblocked.", "success");
+      loadAdminUsers();
+    }
+
+    async function loadAuditLogs() {
+      const params = new URLSearchParams();
+
+      params.set("page", el("auditPage").value || "1");
+      params.set("limit", "20");
+
+      if (el("auditAction").value.trim()) {
+        params.set("action", el("auditAction").value.trim());
+      }
+
+      if (el("auditActorId").value.trim()) {
+        params.set("actorId", el("auditActorId").value.trim());
+      }
+
+      if (el("auditIp").value.trim()) {
+        params.set("ipAddress", el("auditIp").value.trim());
+      }
+
+      const result = await get("/admin/audit-logs?" + params.toString());
+
+      if (!result.ok) {
+        return showMessage(result.data.message || "Could not load audit logs.", "error");
+      }
+
+      const rows = result.data.logs || [];
+
+      el("auditLogsTable").innerHTML =
+        `<p class="small">Total: ${result.data.total || rows.length}</p>` +
+        table(
+          ["ID", "Actor", "Role", "Action", "Object", "Object ID", "IP", "Created"],
+          rows.map((l) => [
+            l.id,
+            l.actor_id || "-",
+            l.actor_role || "-",
+            escapeHtml(l.action || "-"),
+            escapeHtml(l.object || "-"),
+            l.object_id || "-",
+            escapeHtml(l.ip_address || "-"),
+            formatDate(l.created_at)
+          ])
+        );
+    }
+
+    async function loadReservedUsernames() {
+      const result = await get("/admin/reserved-usernames?page=1&limit=100");
+
+      if (!result.ok) {
+        return showMessage(result.data.message || "Could not load reserved usernames.", "error");
+      }
+
+      const rows = result.data.reservedUsernames || [];
+
+      el("reservedUsernamesTable").innerHTML = table(
+        ["ID", "Username", "Update", "Delete"],
+        rows.map((r) => [
+          r.id,
+          `<input id="reserved-${r.id}" value="${escapeAttr(r.username)}">`,
+          `<button onclick="updateReservedUsername(${r.id})">Update</button>`,
+          `<button class="danger" onclick="deleteReservedUsername(${r.id})">Delete</button>`
+        ])
+      );
+    }
+
+    async function createReservedUsername() {
+      const username = el("reservedUsernameInput").value.trim();
+
+      if (!username) {
+        return showMessage("Reserved username is required.", "error");
+      }
+
+      const result = await post("/admin/reserved-usernames", {
+        username
+      });
+
+      if (!result.ok) {
+        return showMessage(result.data.message || "Could not create reserved username.", "error");
+      }
+
+      el("reservedUsernameInput").value = "";
+      showMessage("Reserved username created.", "success");
+      loadReservedUsernames();
+    }
+
+    async function updateReservedUsername(id) {
+      const username = el(`reserved-${id}`).value.trim();
+
+      const result = await put(`/admin/reserved-usernames/${id}`, {
+        username
+      });
+
+      if (!result.ok) {
+        return showMessage(result.data.message || "Could not update reserved username.", "error");
+      }
+
+      showMessage("Reserved username updated.", "success");
+      loadReservedUsernames();
+    }
+
+    async function deleteReservedUsername(id) {
+      const result = await del(`/admin/reserved-usernames/${id}`);
+
+      if (!result.ok) {
+        return showMessage(result.data.message || "Could not delete reserved username.", "error");
+      }
+
+      showMessage("Reserved username deleted.", "success");
+      loadReservedUsernames();
+    }
+
+    function table(headers, rows) {
+      return `
+        <table>
+          <thead>
+            <tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr>
+          </thead>
+          <tbody>
+            ${
+              rows.length
+                ? rows.map((row) => `<tr>${row.map((cell) => `<td>${cell ?? "-"}</td>`).join("")}</tr>`).join("")
+                : `<tr><td colspan="${headers.length}">No data</td></tr>`
+            }
+          </tbody>
+        </table>
+      `;
+    }
+
+    function short(value) {
+      if (!value) return "-";
+      const text = String(value);
+      return escapeHtml(text.length > 70 ? text.slice(0, 70) + "..." : text);
+    }
+
+    function formatDate(value) {
+      if (!value) return "-";
+
+      try {
+        return new Date(value).toLocaleString();
+      } catch {
+        return value;
+      }
+    }
+
+    function escapeHtml(value) {
+      return String(value || "").replace(/[&<>'"]/g, (c) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "'": "&#39;",
+        '"': "&quot;"
+      }[c]));
+    }
+
+    function escapeAttr(value) {
+      return escapeHtml(value).replace(/`/g, "&#96;");
+    }
+
+    async function init() {
+      const params = new URLSearchParams(window.location.search);
+      const resetToken = params.get("resetToken");
+
+      if (resetToken) {
+        showPasswordResetConfirm(resetToken);
+        return;
+      }
+
+      if (handleSsoResultFromUrl()) {
+        return;
+      }
+
+      const authenticated = await loadMyProfile(true);
+
+      if (authenticated) {
+        showDashboard();
+      } else {
+        showLogin();
+      }
+    }
+
+
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const sendCodeButton = el("sendCodeButton");
+
+      if (sendCodeButton) {
+        sendCodeButton.addEventListener("click", (event) => {
+          event.preventDefault();
+          sendLoginCode(event);
+        });
+      }
+    });
+
+    window.login = login;
+    window.register = register;
+    window.loginWithGoogle = loginWithGoogle;
+    window.loginWithGithub = loginWithGithub;
+    window.showRegister = showRegister;
+    window.showLogin = showLogin;
+    window.showPasswordResetRequest = showPasswordResetRequest;
+    window.requestPasswordReset = requestPasswordReset;
+    window.confirmPasswordReset = confirmPasswordReset;
+    window.startSetup = startSetup;
+    window.verifySetup = verifySetup;
+    window.downloadRecoveryCodes = downloadRecoveryCodes;
+    window.continueAfterSavingCodes = continueAfterSavingCodes;
+    window.sendLoginCode = sendLoginCode;
+    window.verifyLogin2fa = verifyLogin2fa;
+    window.verifyRecovery = verifyRecovery;
+    window.startDashboard2faSetup = startDashboard2faSetup;
+    window.verifyDashboard2faSetup = verifyDashboard2faSetup;
+    window.changePassword = changePassword;
+    window.loadSessions = loadSessions;
+    window.revokeSession = revokeSession;
+    window.loadTrustedDevices = loadTrustedDevices;
+    window.revokeTrustedDevice = revokeTrustedDevice;
+    window.logout = logout;
+    window.refreshSession = refreshSession;
+    window.loadAdminUsers = loadAdminUsers;
+    window.blockUser = blockUser;
+    window.unblockUser = unblockUser;
+    window.loadAuditLogs = loadAuditLogs;
+    window.loadReservedUsernames = loadReservedUsernames;
+    window.createReservedUsername = createReservedUsername;
+    window.updateReservedUsername = updateReservedUsername;
+    window.deleteReservedUsername = deleteReservedUsername;
+    window.onHCaptchaLoaded = onHCaptchaLoaded;
+
+    init();
+  </script>
+</body>
+</html>
